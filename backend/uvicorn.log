@@ -1,0 +1,1035 @@
+INFO:     Will watch for changes in these directories: ['/Users/varshanimbalkar/medAgents/backend']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [94313] using WatchFiles
+[MemoryAgent] Loading FAISS index from disk...
+[MemoryAgent] Loaded 435 visit embeddings.
+INFO:     Started server process [94317]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+[MemoryAgent] Loading FAISS index from disk...
+[MemoryAgent] Loaded 435 visit embeddings.
+
+============================================================
+  Clinical Decision Support System — Starting Up
+============================================================
+[Startup] Initializing database...
+[Startup] Loading patient data from /Users/varshanimbalkar/medAgents/backend/patient_data.json...
+[Startup] Patients loaded: 100 (0 new)
+[Startup] Visits loaded:   435
+[Startup] Episodic FAISS index found on disk — skipping rebuild.
+[Startup] Guideline FAISS index found on disk — skipping rebuild.
+[Startup] ✅ System ready!
+============================================================
+
+INFO:     127.0.0.1:50388 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50388 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50389 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50388 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50391 - "GET /patient/PAT036 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50395 - "GET /patient/PAT036 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50398 - "GET /patient/PAT036 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50402 - "GET /patient/PAT036 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50402 - "OPTIONS /reason HTTP/1.1" 200 OK
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[MemoryAgent] Loading sentence-transformers model...
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 6824.32it/s]
+[RAG] Loaded guideline index (100 guidelines).
+[RAG] Loading sentence-transformers model...
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 13343.63it/s]
+/Users/varshanimbalkar/medAgents/backend/agents.py:36: LangChainDeprecationWarning: The class `ConversationBufferMemory` was deprecated in LangChain 0.3.1 and will be removed in 2.0.0. Use `langchain.agents.create_agent` instead. For agents that need to remember prior interactions, use `create_agent` with checkpointing or the `Store` API. See https://docs.langchain.com/oss/python/langchain/short-term-memory and https://docs.langchain.com/oss/python/langchain/long-term-memory
+  _patient_memories[patient_id] = ConversationBufferMemory(
+/Users/varshanimbalkar/medAgents/backend/agents.py:188: LangChainDeprecationWarning: The class `LLMChain` was deprecated in LangChain 0.1.17 and will be removed in 2.0.0. Use `RunnableSequence, e.g., `prompt | llm`` instead.
+  chain = LLMChain(
+/Users/varshanimbalkar/medAgents/backend/agents.py:196: LangChainDeprecationWarning: The method `Chain.run` was deprecated in langchain-classic 0.1.0 and will be removed in 2.0.0. Use `invoke` instead.
+  response_text = chain.run(
+
+
+[1m> Entering new LLMChain chain...[0m
+Prompt after formatting:
+[32;1m[1;3m
+You are a clinical decision support AI assistant. Your role is to help doctors by providing structured clinical summaries and suggestions. You must NEVER make a diagnosis or prescribe treatment. Your output must always be reviewed and approved by a licensed physician.
+
+## PREVIOUS CONVERSATION (Working Memory)
+
+
+## PATIENT INFORMATION
+Name: Aditya Hegde
+Age: 39 years
+Gender: Male
+Allergies: NKDA (No Known Drug Allergy)
+Past Medical History: Hypertension
+
+## CURRENT VISIT
+Date: 2023-07-16
+Chief Complaint: decreased urine output
+HPI: Patient presents with decreased urine output for 5 days. Associated symptoms include edema, confusion. No improvement with previous medications.
+Symptoms: decreased urine output, edema, confusion, nausea
+Clinical Notes: Patient Aditya Hegde, 39-year-old, presenting for third visit. Chief complaint: decreased urine output. Patient reports confusion, nausea, decreased urine output. Symptoms have been present for 12 days. On examination, patient is mildly distressed. Vitals as documented. Systemic examination performed. Cardiovascular: S1 S2 with grade 2/6 systolic murmur. Respiratory: Clear bilaterally. Abdomen: Guarding present. Assessment: Acute kidney injury. Cause under investigation. Fluid and electrolyte management. Treatment plan reviewed and adjusted for visit 3. Laboratory investigations ordered. Patient counselled on medications and lifestyle. Follow-up advised in 2 weeks.
+
+## VITALS
+{
+  "blood_pressure": {
+    "systolic": 117,
+    "diastolic": 76
+  },
+  "pulse": 70,
+  "temperature": 98.2,
+  "respiratory_rate": 18,
+  "spo2": 99,
+  "height": 159,
+  "weight": 96,
+  "bmi": 38.0
+}
+
+## LABORATORY RESULTS (Selected)
+CBC: HGB 11.7 g/dL, WBC 8.6 x10³/μL
+KFT: Creatinine 6.03 mg/dL, Urea 104 mg/dL
+LFT: AST 37 U/L, ALT 10 U/L
+
+## EPISODIC MEMORY (Relevant Previous Visits)
+### Episode 1 (2023-06-17)
+- **Complaint & Symptoms**: decreased urine output | confusion, nausea, edema
+- **Diagnosis**: Acute Kidney Injury
+- **Assessment**: Acute kidney injury. Cause under investigation. Fluid and electrolyte management.
+- **Treatment & Meds**: Continue current medications. Add new medication. Lifestyle counselling. | IV Normal Saline 1L over 4h, Furosemide 80mg IV, Sodium Bicarbonate
+
+### Episode 2 (2023-05-11)
+- **Complaint & Symptoms**: decreased urine output | confusion, nausea, decreased urine output, edema
+- **Diagnosis**: Acute Kidney Injury
+- **Assessment**: Acute kidney injury. Cause under investigation. Fluid and electrolyte management.
+- **Treatment & Meds**: Continue current medications. Refer to specialist. Lifestyle counselling. | IV Normal Saline 1L over 4h, Furosemide 80mg IV
+
+## RELEVANT CLINICAL GUIDELINES (Evidence-Based)
+[G044] Urinary Tract Infection (IDSA UTI Guidelines 2011): Uncomplicated UTI: nitrofurantoin or trimethoprim-sulfamethoxazole 3-7 days. Fosfomycin single dose. Avoid fluoroquinolones for uncomplicated UTI. Urine culture if recurrent.
+[G025] Acute Kidney Injury (KDIGO AKI Guidelines 2012): AKI defined as creatinine rise ≥0.3 mg/dL in 48h or ≥1.5× baseline in 7 days or urine output <0.5 mL/kg/h for 6h. Avoid nephrotoxins. Adequate hydration essential.
+[G024] Chronic Kidney Disease (KDIGO CKD Guidelines 2022): ACE inhibitor or ARB recommended in CKD with proteinuria. Monitor potassium levels. Anemia management with ESA when Hb <10 g/dL. SGLT-2 inhibitors reduce CKD progression.
+[G041] Iron Deficiency (British Society of Haematology Guidelines): Ferritin <30 mcg/L diagnostic of iron deficiency. Ferritin 30-100 with transferrin saturation <20% suggests functional deficiency. Investigate GI blood loss in adults.
+[G042] Vitamin B12 Deficiency (British National Formulary): Causes: pernicious anemia, veganism, malabsorption. Symptoms: fatigue, glossitis, peripheral neuropathy, subacute combined degeneration of cord. Check anti-IF antibodies.
+
+## YOUR TASK
+Based on all the above information, provide a structured clinical support summary. Do NOT diagnose. Use clinical language appropriate for a physician audience.
+
+Respond ONLY in the following JSON format without markdown code blocks:
+{
+  "case_summary": "A concise 3-5 sentence summary of the clinical presentation and key findings",
+  "considerations": [
+    "Consideration 1: ...",
+    "Consideration 2: ..."
+  ],
+  "missing_information": [
+    "Missing info 1: ..."
+  ],
+  "suggested_investigations": [
+    "Investigation 1: ..."
+  ],
+  "follow_up_recommendations": [
+    "Follow-up 1: ..."
+  ],
+  "reasoning_trace": "Step-by-step clinical reasoning walkthrough (3-6 sentences explaining how you arrived at the considerations)"
+}
+[0m
+INFO:     127.0.0.1:50406 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50406 - "GET / HTTP/1.1" 200 OK
+LangChain Agent Error: Error calling model 'gemini-2.0-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\nPlease retry in 57.321390924s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '57s'}]}}
+INFO:     127.0.0.1:50402 - "POST /reason HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50402 - "OPTIONS /critique HTTP/1.1" 200 OK
+
+
+[1m> Entering new LLMChain chain...[0m
+Prompt after formatting:
+[32;1m[1;3m
+You are a senior clinical AI quality reviewer. Your job is to critically evaluate a clinical decision support summary generated by an AI assistant. You must identify any potential errors, hallucinations, missing information, guideline mismatches, or contradictions.
+
+## PATIENT CLINICAL DATA (Ground Truth)
+Allergies: NKDA (No Known Drug Allergy)
+
+## CURRENT VISIT
+Chief Complaint: decreased urine output
+Symptoms: decreased urine output, edema, confusion, nausea
+
+## VITALS
+Blood Pressure: {'systolic': 117, 'diastolic': 76}
+SpO2: 99
+Temperature: 98.2
+
+## LABORATORY RESULTS (Selected)
+HbA1c: 5.8%
+Creatinine: 6.03 mg/dL
+eGFR: 26 mL/min
+WBC: 8.6 x10³/μL
+CRP: 4.0 mg/L
+
+## EPISODIC MEMORY (Patient History)
+### Episode 1 (2023-06-17)
+- **Complaint & Symptoms**: decreased urine output | confusion, nausea, edema
+- **Diagnosis**: Acute Kidney Injury
+- **Assessment**: Acute kidney injury. Cause under investigation. Fluid and electrolyte management.
+- **Treatment & Meds**: Continue current medications. Add new medication. Lifestyle counselling. | IV Normal Saline 1L over 4h, Furosemide 80mg IV, Sodium Bicarbonate
+
+### Episode 2 (2023-05-11)
+- **Complaint & Symptoms**: decreased urine output | confusion, nausea, decreased urine output, edema
+- **Diagnosis**: Acute Kidney Injury
+- **Assessment**: Acute kidney injury. Cause under investigation. Fluid and electrolyte management.
+- **Treatment & Meds**: Continue current medications. Refer to specialist. Lifestyle counselling. | IV Normal Saline 1L over 4h, Furosemide 80mg IV
+
+## ORIGINAL AI-GENERATED CASE SUMMARY
+Unable to generate AI summary. Error: Error calling model 'gemini-2.0-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\nPlease retry in 57.321390924s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '57s'}]}}
+
+## ORIGINAL AI REASONING TRACE
+Agent error: Error calling model 'gemini-2.0-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\nPlease retry in 57.321390924s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '57s'}]}}
+
+## GUIDELINES USED
+None provided
+
+## YOUR CRITIQUE TASK
+Carefully review the AI-generated summary and reasoning against the actual patient data, guidelines, and episodic memory. 
+Specifically check for historical inconsistencies (e.g., repeating failed treatments, suggesting medications the patient has allergies to, or ignoring previous diagnoses).
+
+Respond ONLY in the following JSON format without markdown code blocks:
+{
+  "critique_text": "Overall 3-4 sentence assessment of the quality of the AI reasoning",
+  "evidence_assessment": "Strong / Moderate / Weak — with 1-2 sentence explanation",
+  "missing_info_flags": [
+    "Flag 1: ...",
+    "Flag 2: ..."
+  ],
+  "hallucination_flags": [
+    "Flag 1: Any claim not supported by the data (or 'None identified')",
+    "Flag 2: ..."
+  ],
+  "contradiction_flags": [
+    "Flag 1: Any internal contradictions (or 'None identified')",
+    "Flag 2: ..."
+  ],
+  "guideline_alignment": "Well-aligned / Partially aligned / Not aligned — with explanation",
+  "revised_reasoning": "If improvements are needed, provide a refined 2-3 sentence clinical reasoning. If original is good, state 'Original reasoning is adequate'",
+  "critique_score": 0.75
+}
+[0m
+INFO:     127.0.0.1:50402 - "POST /critique HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51142 - "GET /history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51142 - "GET /history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51142 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51145 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51149 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51152 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51150 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51152 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51158 - "GET /patient/PAT036 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51162 - "GET /patient/PAT036 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51165 - "GET /patient/PAT036 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51169 - "GET /patient/PAT036 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51169 - "OPTIONS /reason HTTP/1.1" 200 OK
+LangChain Agent Error: Error calling model 'gemini-2.0-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\nPlease retry in 14.77037115s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '14s'}]}}
+
+
+[1m> Entering new LLMChain chain...[0m
+Prompt after formatting:
+[32;1m[1;3m
+You are a clinical decision support AI assistant. Your role is to help doctors by providing structured clinical summaries and suggestions. You must NEVER make a diagnosis or prescribe treatment. Your output must always be reviewed and approved by a licensed physician.
+
+## PREVIOUS CONVERSATION (Working Memory)
+
+
+## PATIENT INFORMATION
+Name: Aditya Hegde
+Age: 39 years
+Gender: Male
+Allergies: NKDA (No Known Drug Allergy)
+Past Medical History: Hypertension
+
+## CURRENT VISIT
+Date: 2023-07-16
+Chief Complaint: decreased urine output
+HPI: Patient presents with decreased urine output for 5 days. Associated symptoms include edema, confusion. No improvement with previous medications.
+Symptoms: decreased urine output, edema, confusion, nausea
+Clinical Notes: Patient Aditya Hegde, 39-year-old, presenting for third visit. Chief complaint: decreased urine output. Patient reports confusion, nausea, decreased urine output. Symptoms have been present for 12 days. On examination, patient is mildly distressed. Vitals as documented. Systemic examination performed. Cardiovascular: S1 S2 with grade 2/6 systolic murmur. Respiratory: Clear bilaterally. Abdomen: Guarding present. Assessment: Acute kidney injury. Cause under investigation. Fluid and electrolyte management. Treatment plan reviewed and adjusted for visit 3. Laboratory investigations ordered. Patient counselled on medications and lifestyle. Follow-up advised in 2 weeks.
+
+## VITALS
+{
+  "blood_pressure": {
+    "systolic": 117,
+    "diastolic": 76
+  },
+  "pulse": 70,
+  "temperature": 98.2,
+  "respiratory_rate": 18,
+  "spo2": 99,
+  "height": 159,
+  "weight": 96,
+  "bmi": 38.0
+}
+
+## LABORATORY RESULTS (Selected)
+CBC: HGB 11.7 g/dL, WBC 8.6 x10³/μL
+KFT: Creatinine 6.03 mg/dL, Urea 104 mg/dL
+LFT: AST 37 U/L, ALT 10 U/L
+
+## EPISODIC MEMORY (Relevant Previous Visits)
+### Episode 1 (2023-06-17)
+- **Complaint & Symptoms**: decreased urine output | confusion, nausea, edema
+- **Diagnosis**: Acute Kidney Injury
+- **Assessment**: Acute kidney injury. Cause under investigation. Fluid and electrolyte management.
+- **Treatment & Meds**: Continue current medications. Add new medication. Lifestyle counselling. | IV Normal Saline 1L over 4h, Furosemide 80mg IV, Sodium Bicarbonate
+
+### Episode 2 (2023-05-11)
+- **Complaint & Symptoms**: decreased urine output | confusion, nausea, decreased urine output, edema
+- **Diagnosis**: Acute Kidney Injury
+- **Assessment**: Acute kidney injury. Cause under investigation. Fluid and electrolyte management.
+- **Treatment & Meds**: Continue current medications. Refer to specialist. Lifestyle counselling. | IV Normal Saline 1L over 4h, Furosemide 80mg IV
+
+## RELEVANT CLINICAL GUIDELINES (Evidence-Based)
+[G044] Urinary Tract Infection (IDSA UTI Guidelines 2011): Uncomplicated UTI: nitrofurantoin or trimethoprim-sulfamethoxazole 3-7 days. Fosfomycin single dose. Avoid fluoroquinolones for uncomplicated UTI. Urine culture if recurrent.
+[G025] Acute Kidney Injury (KDIGO AKI Guidelines 2012): AKI defined as creatinine rise ≥0.3 mg/dL in 48h or ≥1.5× baseline in 7 days or urine output <0.5 mL/kg/h for 6h. Avoid nephrotoxins. Adequate hydration essential.
+[G024] Chronic Kidney Disease (KDIGO CKD Guidelines 2022): ACE inhibitor or ARB recommended in CKD with proteinuria. Monitor potassium levels. Anemia management with ESA when Hb <10 g/dL. SGLT-2 inhibitors reduce CKD progression.
+[G041] Iron Deficiency (British Society of Haematology Guidelines): Ferritin <30 mcg/L diagnostic of iron deficiency. Ferritin 30-100 with transferrin saturation <20% suggests functional deficiency. Investigate GI blood loss in adults.
+[G042] Vitamin B12 Deficiency (British National Formulary): Causes: pernicious anemia, veganism, malabsorption. Symptoms: fatigue, glossitis, peripheral neuropathy, subacute combined degeneration of cord. Check anti-IF antibodies.
+
+## YOUR TASK
+Based on all the above information, provide a structured clinical support summary. Do NOT diagnose. Use clinical language appropriate for a physician audience.
+
+Respond ONLY in the following JSON format without markdown code blocks:
+{
+  "case_summary": "A concise 3-5 sentence summary of the clinical presentation and key findings",
+  "considerations": [
+    "Consideration 1: ...",
+    "Consideration 2: ..."
+  ],
+  "missing_information": [
+    "Missing info 1: ..."
+  ],
+  "suggested_investigations": [
+    "Investigation 1: ..."
+  ],
+  "follow_up_recommendations": [
+    "Follow-up 1: ..."
+  ],
+  "reasoning_trace": "Step-by-step clinical reasoning walkthrough (3-6 sentences explaining how you arrived at the considerations)"
+}
+[0m
+INFO:     127.0.0.1:51169 - "POST /reason HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51169 - "OPTIONS /critique HTTP/1.1" 200 OK
+
+
+[1m> Entering new LLMChain chain...[0m
+Prompt after formatting:
+[32;1m[1;3m
+You are a senior clinical AI quality reviewer. Your job is to critically evaluate a clinical decision support summary generated by an AI assistant. You must identify any potential errors, hallucinations, missing information, guideline mismatches, or contradictions.
+
+## PATIENT CLINICAL DATA (Ground Truth)
+Allergies: NKDA (No Known Drug Allergy)
+
+## CURRENT VISIT
+Chief Complaint: decreased urine output
+Symptoms: decreased urine output, edema, confusion, nausea
+
+## VITALS
+Blood Pressure: {'systolic': 117, 'diastolic': 76}
+SpO2: 99
+Temperature: 98.2
+
+## LABORATORY RESULTS (Selected)
+HbA1c: 5.8%
+Creatinine: 6.03 mg/dL
+eGFR: 26 mL/min
+WBC: 8.6 x10³/μL
+CRP: 4.0 mg/L
+
+## EPISODIC MEMORY (Patient History)
+### Episode 1 (2023-06-17)
+- **Complaint & Symptoms**: decreased urine output | confusion, nausea, edema
+- **Diagnosis**: Acute Kidney Injury
+- **Assessment**: Acute kidney injury. Cause under investigation. Fluid and electrolyte management.
+- **Treatment & Meds**: Continue current medications. Add new medication. Lifestyle counselling. | IV Normal Saline 1L over 4h, Furosemide 80mg IV, Sodium Bicarbonate
+
+### Episode 2 (2023-05-11)
+- **Complaint & Symptoms**: decreased urine output | confusion, nausea, decreased urine output, edema
+- **Diagnosis**: Acute Kidney Injury
+- **Assessment**: Acute kidney injury. Cause under investigation. Fluid and electrolyte management.
+- **Treatment & Meds**: Continue current medications. Refer to specialist. Lifestyle counselling. | IV Normal Saline 1L over 4h, Furosemide 80mg IV
+
+## ORIGINAL AI-GENERATED CASE SUMMARY
+Unable to generate AI summary. Error: Error calling model 'gemini-2.0-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\nPlease retry in 14.77037115s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '14s'}]}}
+
+## ORIGINAL AI REASONING TRACE
+Agent error: Error calling model 'gemini-2.0-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\nPlease retry in 14.77037115s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '14s'}]}}
+
+## GUIDELINES USED
+None provided
+
+## YOUR CRITIQUE TASK
+Carefully review the AI-generated summary and reasoning against the actual patient data, guidelines, and episodic memory. 
+Specifically check for historical inconsistencies (e.g., repeating failed treatments, suggesting medications the patient has allergies to, or ignoring previous diagnoses).
+
+Respond ONLY in the following JSON format without markdown code blocks:
+{
+  "critique_text": "Overall 3-4 sentence assessment of the quality of the AI reasoning",
+  "evidence_assessment": "Strong / Moderate / Weak — with 1-2 sentence explanation",
+  "missing_info_flags": [
+    "Flag 1: ...",
+    "Flag 2: ..."
+  ],
+  "hallucination_flags": [
+    "Flag 1: Any claim not supported by the data (or 'None identified')",
+    "Flag 2: ..."
+  ],
+  "contradiction_flags": [
+    "Flag 1: Any internal contradictions (or 'None identified')",
+    "Flag 2: ..."
+  ],
+  "guideline_alignment": "Well-aligned / Partially aligned / Not aligned — with explanation",
+  "revised_reasoning": "If improvements are needed, provide a refined 2-3 sentence clinical reasoning. If original is good, state 'Original reasoning is adequate'",
+  "critique_score": 0.75
+}
+[0m
+INFO:     127.0.0.1:51169 - "POST /critique HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51195 - "OPTIONS /approve HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51195 - "POST /approve HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51198 - "POST /approve HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51286 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51286 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51287 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51286 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51292 - "GET /patient/PAT058 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51297 - "GET /patient/PAT058 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51297 - "GET /patient/PAT058 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51292 - "GET /patient/PAT058 HTTP/1.1" 200 OK
+LangChain Agent Error: Error calling model 'gemini-2.0-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\nPlease retry in 31.739578162s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '31s'}]}}
+
+
+[1m> Entering new LLMChain chain...[0m
+Prompt after formatting:
+[32;1m[1;3m
+You are a clinical decision support AI assistant. Your role is to help doctors by providing structured clinical summaries and suggestions. You must NEVER make a diagnosis or prescribe treatment. Your output must always be reviewed and approved by a licensed physician.
+
+## PREVIOUS CONVERSATION (Working Memory)
+
+
+## PATIENT INFORMATION
+Name: Aditya Patel
+Age: 34 years
+Gender: Male
+Allergies: NKDA (No Known Drug Allergy)
+Past Medical History: Depression
+
+## CURRENT VISIT
+Date: 2024-01-05
+Chief Complaint: high fever
+HPI: Patient presents with high fever for 13 days. Associated symptoms include retro-orbital pain, rash. No improvement with previous medications.
+Symptoms: retro-orbital pain, rash, severe headache, high fever
+Clinical Notes: Patient Aditya Patel, 34-year-old, presenting for fourth visit. Chief complaint: high fever. Patient reports myalgia, petechiae, retro-orbital pain. Symptoms have been present for 8 days. On examination, patient is alert and oriented. Vitals as documented. Systemic examination performed. Cardiovascular: S1 S2 with grade 2/6 systolic murmur. Respiratory: Bilateral crackles. Abdomen: Guarding present. Assessment: Dengue fever with thrombocytopenia. Monitoring for warning signs. Treatment plan reviewed and adjusted for visit 4. Laboratory investigations ordered. Patient counselled on medications and lifestyle. Follow-up advised in 3 months.
+
+## VITALS
+{
+  "blood_pressure": {
+    "systolic": 120,
+    "diastolic": 77
+  },
+  "pulse": 90,
+  "temperature": 104.0,
+  "respiratory_rate": 23,
+  "spo2": 93,
+  "height": 155,
+  "weight": 112,
+  "bmi": 46.6
+}
+
+## LABORATORY RESULTS (Selected)
+CBC: HGB 14.4 g/dL, WBC 4.7 x10³/μL
+KFT: Creatinine 0.9 mg/dL, Urea 21 mg/dL
+LFT: AST 25 U/L, ALT 10 U/L
+
+## EPISODIC MEMORY (Relevant Previous Visits)
+### Episode 1 (2023-09-02)
+- **Complaint & Symptoms**: high fever | high fever, severe headache, retro-orbital pain, rash
+- **Diagnosis**: Dengue Fever
+- **Assessment**: Dengue fever with thrombocytopenia. Monitoring for warning signs.
+- **Treatment & Meds**: Continue current medications. Monitor closely. Lifestyle counselling. | Paracetamol 500mg QDS, IV Normal Saline 2L
+
+### Episode 2 (2023-09-26)
+- **Complaint & Symptoms**: high fever | rash, retro-orbital pain, petechiae
+- **Diagnosis**: Dengue Fever
+- **Assessment**: Dengue fever with thrombocytopenia. Monitoring for warning signs.
+- **Treatment & Meds**: Continue current medications. Monitor closely. Lifestyle counselling. | Paracetamol 500mg QDS, IV Normal Saline 2L, Oral rehydration
+
+### Episode 3 (2023-07-01)
+- **Complaint & Symptoms**: high fever | myalgia, high fever, rash, petechiae
+- **Diagnosis**: Dengue Fever
+- **Assessment**: Dengue fever with thrombocytopenia. Monitoring for warning signs.
+- **Treatment & Meds**: Continue current medications. Monitor closely. Lifestyle counselling. | Paracetamol 500mg QDS, IV Normal Saline 2L
+
+## RELEVANT CLINICAL GUIDELINES (Evidence-Based)
+[G018] Typhoid (WHO Typhoid Fever Guidelines 2018): Azithromycin preferred for uncomplicated typhoid. Fluoroquinolones for severe cases but resistance increasing. Blood culture gold standard in first week of illness.
+[G016] Dengue (WHO Dengue Guidelines 2012): Warning signs: abdominal pain, persistent vomiting, bleeding, lethargy, liver enlargement >2cm, rising hematocrit with rapid platelet fall. Require hospital admission.
+[G028] Migraine (AHS Migraine Treatment Guidelines 2021): Acute: triptans first-line for moderate-severe migraine. NSAIDs for mild. Preventive therapy if ≥4 headache days/month. Topiramate, propranolol, or CGRP antagonists.
+[G015] Pneumonia (ATS/IDSA CAP Guidelines 2019): Outpatient CAP: amoxicillin or doxycycline. Inpatient non-ICU: beta-lactam + macrolide or respiratory fluoroquinolone. ICU: beta-lactam + azithromycin or fluoroquinolone.
+[G085] Pediatric Asthma (NAEPP Asthma Guidelines 2007 Updated): Intermittent: SABA PRN. Mild persistent: low-dose ICS. Moderate persistent: medium-dose ICS or low-dose ICS + LABA. Severe: high-dose ICS + LABA + controller. Stepwise approach.
+
+## YOUR TASK
+Based on all the above information, provide a structured clinical support summary. Do NOT diagnose. Use clinical language appropriate for a physician audience.
+
+Respond ONLY in the following JSON format without markdown code blocks:
+{
+  "case_summary": "A concise 3-5 sentence summary of the clinical presentation and key findings",
+  "considerations": [
+    "Consideration 1: ...",
+    "Consideration 2: ..."
+  ],
+  "missing_information": [
+    "Missing info 1: ..."
+  ],
+  "suggested_investigations": [
+    "Investigation 1: ..."
+  ],
+  "follow_up_recommendations": [
+    "Follow-up 1: ..."
+  ],
+  "reasoning_trace": "Step-by-step clinical reasoning walkthrough (3-6 sentences explaining how you arrived at the considerations)"
+}
+[0m
+INFO:     127.0.0.1:51292 - "POST /reason HTTP/1.1" 200 OK
+
+
+[1m> Entering new LLMChain chain...[0m
+Prompt after formatting:
+[32;1m[1;3m
+You are a senior clinical AI quality reviewer. Your job is to critically evaluate a clinical decision support summary generated by an AI assistant. You must identify any potential errors, hallucinations, missing information, guideline mismatches, or contradictions.
+
+## PATIENT CLINICAL DATA (Ground Truth)
+Allergies: NKDA (No Known Drug Allergy)
+
+## CURRENT VISIT
+Chief Complaint: high fever
+Symptoms: retro-orbital pain, rash, severe headache, high fever
+
+## VITALS
+Blood Pressure: {'systolic': 120, 'diastolic': 77}
+SpO2: 93
+Temperature: 104.0
+
+## LABORATORY RESULTS (Selected)
+HbA1c: 5.0%
+Creatinine: 0.9 mg/dL
+eGFR: 69 mL/min
+WBC: 4.7 x10³/μL
+CRP: 3.3 mg/L
+
+## EPISODIC MEMORY (Patient History)
+### Episode 1 (2023-09-02)
+- **Complaint & Symptoms**: high fever | high fever, severe headache, retro-orbital pain, rash
+- **Diagnosis**: Dengue Fever
+- **Assessment**: Dengue fever with thrombocytopenia. Monitoring for warning signs.
+- **Treatment & Meds**: Continue current medications. Monitor closely. Lifestyle counselling. | Paracetamol 500mg QDS, IV Normal Saline 2L
+
+### Episode 2 (2023-09-26)
+- **Complaint & Symptoms**: high fever | rash, retro-orbital pain, petechiae
+- **Diagnosis**: Dengue Fever
+- **Assessment**: Dengue fever with thrombocytopenia. Monitoring for warning signs.
+- **Treatment & Meds**: Continue current medications. Monitor closely. Lifestyle counselling. | Paracetamol 500mg QDS, IV Normal Saline 2L, Oral rehydration
+
+### Episode 3 (2023-07-01)
+- **Complaint & Symptoms**: high fever | myalgia, high fever, rash, petechiae
+- **Diagnosis**: Dengue Fever
+- **Assessment**: Dengue fever with thrombocytopenia. Monitoring for warning signs.
+- **Treatment & Meds**: Continue current medications. Monitor closely. Lifestyle counselling. | Paracetamol 500mg QDS, IV Normal Saline 2L
+
+## ORIGINAL AI-GENERATED CASE SUMMARY
+Unable to generate AI summary. Error: Error calling model 'gemini-2.0-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\nPlease retry in 31.739578162s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '31s'}]}}
+
+## ORIGINAL AI REASONING TRACE
+Agent error: Error calling model 'gemini-2.0-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\nPlease retry in 31.739578162s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '31s'}]}}
+
+## GUIDELINES USED
+None provided
+
+## YOUR CRITIQUE TASK
+Carefully review the AI-generated summary and reasoning against the actual patient data, guidelines, and episodic memory. 
+Specifically check for historical inconsistencies (e.g., repeating failed treatments, suggesting medications the patient has allergies to, or ignoring previous diagnoses).
+
+Respond ONLY in the following JSON format without markdown code blocks:
+{
+  "critique_text": "Overall 3-4 sentence assessment of the quality of the AI reasoning",
+  "evidence_assessment": "Strong / Moderate / Weak — with 1-2 sentence explanation",
+  "missing_info_flags": [
+    "Flag 1: ...",
+    "Flag 2: ..."
+  ],
+  "hallucination_flags": [
+    "Flag 1: Any claim not supported by the data (or 'None identified')",
+    "Flag 2: ..."
+  ],
+  "contradiction_flags": [
+    "Flag 1: Any internal contradictions (or 'None identified')",
+    "Flag 2: ..."
+  ],
+  "guideline_alignment": "Well-aligned / Partially aligned / Not aligned — with explanation",
+  "revised_reasoning": "If improvements are needed, provide a refined 2-3 sentence clinical reasoning. If original is good, state 'Original reasoning is adequate'",
+  "critique_score": 0.75
+}
+[0m
+INFO:     127.0.0.1:51292 - "POST /critique HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51321 - "POST /approve HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51323 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51323 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51325 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51323 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51329 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51336 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51342 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51342 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51343 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51342 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51342 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51343 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51343 - "GET /history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51342 - "GET /history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51348 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51348 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51351 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51348 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51368 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51373 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51373 - "GET /history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51368 - "GET /history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51368 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51375 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51373 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51375 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51380 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51415 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51415 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51417 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51415 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51419 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51421 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51421 - "GET /history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51419 - "GET /history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51419 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51421 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51497 - "GET /patient/PAT036 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51501 - "GET /patient/PAT036 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51504 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51504 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51506 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51504 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51519 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51524 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51524 - "GET /history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51519 - "GET /history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51528 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51528 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51530 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51528 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51546 - "GET /patient/PAT057 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51551 - "GET /patient/PAT057 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51594 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51599 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51599 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51601 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51594 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51601 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51606 - "GET /patient/PAT003 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51610 - "GET /patient/PAT003 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51610 - "GET /patient/PAT003 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51606 - "GET /patient/PAT003 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51606 - "OPTIONS /reason HTTP/1.1" 200 OK
+LangChain Agent Error: Error calling model 'gemini-2.0-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\nPlease retry in 26.130979041s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '26s'}]}}
+
+
+[1m> Entering new LLMChain chain...[0m
+Prompt after formatting:
+[32;1m[1;3m
+You are a clinical decision support AI assistant. Your role is to help doctors by providing structured clinical summaries and suggestions. You must NEVER make a diagnosis or prescribe treatment. Your output must always be reviewed and approved by a licensed physician.
+
+## PREVIOUS CONVERSATION (Working Memory)
+
+
+## PATIENT INFORMATION
+Name: Anjali Jain
+Age: 74 years
+Gender: Female
+Allergies: Latex, NKDA (No Known Drug Allergy)
+Past Medical History: Hypothyroidism, Asthma
+
+## CURRENT VISIT
+Date: 2023-10-02
+Chief Complaint: severe unilateral headache
+HPI: Patient presents with severe unilateral headache for 13 days. Associated symptoms include phonophobia, vomiting. No improvement with previous medications.
+Symptoms: severe unilateral headache, vomiting, photophobia, phonophobia
+Clinical Notes: Patient Anjali Jain, 74-year-old, presenting for third visit. Chief complaint: severe unilateral headache. Patient reports severe unilateral headache, phonophobia, nausea. Symptoms have been present for 2 days. On examination, patient is comfortable at rest. Vitals as documented. Systemic examination performed. Cardiovascular: S1 S2 with grade 2/6 systolic murmur. Respiratory: Bilateral crackles. Abdomen: Guarding present. Assessment: Migraine with and without aura. Preventive therapy initiated. Treatment plan reviewed and adjusted for visit 3. Laboratory investigations ordered. Patient counselled on medications and lifestyle. Follow-up advised in 2 weeks.
+
+## VITALS
+{
+  "blood_pressure": {
+    "systolic": 123,
+    "diastolic": 85
+  },
+  "pulse": 72,
+  "temperature": 98.1,
+  "respiratory_rate": 17,
+  "spo2": 99,
+  "height": 173,
+  "weight": 58,
+  "bmi": 19.4
+}
+
+## LABORATORY RESULTS (Selected)
+CBC: HGB 11.5 g/dL, WBC 8.2 x10³/μL
+KFT: Creatinine 1.1 mg/dL, Urea 33 mg/dL
+LFT: AST 40 U/L, ALT 39 U/L
+
+## EPISODIC MEMORY (Relevant Previous Visits)
+### Episode 1 (2023-07-13)
+- **Complaint & Symptoms**: severe unilateral headache | photophobia, nausea
+- **Diagnosis**: Migraine
+- **Assessment**: Migraine with and without aura. Preventive therapy initiated.
+- **Treatment & Meds**: Continue current medications. Increase dose. Lifestyle counselling. | Sumatriptan 50mg PRN, Propranolol 40mg BD, Amitriptyline 25mg OD
+
+### Episode 2 (2023-05-23)
+- **Complaint & Symptoms**: severe unilateral headache | photophobia, aura, vomiting, severe unilateral headache
+- **Diagnosis**: Migraine
+- **Assessment**: Migraine with and without aura. Preventive therapy initiated.
+- **Treatment & Meds**: Continue current medications. Refer to specialist. Lifestyle counselling. | Sumatriptan 50mg PRN
+
+## RELEVANT CLINICAL GUIDELINES (Evidence-Based)
+[G028] Migraine (AHS Migraine Treatment Guidelines 2021): Acute: triptans first-line for moderate-severe migraine. NSAIDs for mild. Preventive therapy if ≥4 headache days/month. Topiramate, propranolol, or CGRP antagonists.
+[G016] Dengue (WHO Dengue Guidelines 2012): Warning signs: abdominal pain, persistent vomiting, bleeding, lethargy, liver enlargement >2cm, rising hematocrit with rapid platelet fall. Require hospital admission.
+[G036] Anxiety Disorders (APA Anxiety Guidelines 2023): CBT most effective psychological treatment. SSRIs/SNRIs first-line medications. Benzodiazepines only for short-term acute relief. Monitor for dependence.
+[G078] Fibromyalgia (ACR Fibromyalgia Criteria 2016): Diagnostic criteria: widespread pain index ≥7 + symptom severity score ≥5 for ≥3 months. Treatment: low-dose amitriptyline, duloxetine, pregabalin, exercise, CBT.
+[G058] Epilepsy (AES Epilepsy Treatment Guidelines 2021): Anti-seizure medications (ASM) based on seizure type. Valproate for generalized; carbamazepine/lamotrigine for focal. Medication withdrawal after 2 seizure-free years if EEG normal.
+
+## YOUR TASK
+Based on all the above information, provide a structured clinical support summary. Do NOT diagnose. Use clinical language appropriate for a physician audience.
+
+Respond ONLY in the following JSON format without markdown code blocks:
+{
+  "case_summary": "A concise 3-5 sentence summary of the clinical presentation and key findings",
+  "considerations": [
+    "Consideration 1: ...",
+    "Consideration 2: ..."
+  ],
+  "missing_information": [
+    "Missing info 1: ..."
+  ],
+  "suggested_investigations": [
+    "Investigation 1: ..."
+  ],
+  "follow_up_recommendations": [
+    "Follow-up 1: ..."
+  ],
+  "reasoning_trace": "Step-by-step clinical reasoning walkthrough (3-6 sentences explaining how you arrived at the considerations)"
+}
+[0m
+INFO:     127.0.0.1:51606 - "POST /reason HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51606 - "OPTIONS /critique HTTP/1.1" 200 OK
+
+
+[1m> Entering new LLMChain chain...[0m
+Prompt after formatting:
+[32;1m[1;3m
+You are a senior clinical AI quality reviewer. Your job is to critically evaluate a clinical decision support summary generated by an AI assistant. You must identify any potential errors, hallucinations, missing information, guideline mismatches, or contradictions.
+
+## PATIENT CLINICAL DATA (Ground Truth)
+Allergies: Latex, NKDA (No Known Drug Allergy)
+
+## CURRENT VISIT
+Chief Complaint: severe unilateral headache
+Symptoms: severe unilateral headache, vomiting, photophobia, phonophobia
+
+## VITALS
+Blood Pressure: {'systolic': 123, 'diastolic': 85}
+SpO2: 99
+Temperature: 98.1
+
+## LABORATORY RESULTS (Selected)
+HbA1c: 5.0%
+Creatinine: 1.1 mg/dL
+eGFR: 77 mL/min
+WBC: 8.2 x10³/μL
+CRP: 3.6 mg/L
+
+## EPISODIC MEMORY (Patient History)
+### Episode 1 (2023-07-13)
+- **Complaint & Symptoms**: severe unilateral headache | photophobia, nausea
+- **Diagnosis**: Migraine
+- **Assessment**: Migraine with and without aura. Preventive therapy initiated.
+- **Treatment & Meds**: Continue current medications. Increase dose. Lifestyle counselling. | Sumatriptan 50mg PRN, Propranolol 40mg BD, Amitriptyline 25mg OD
+
+### Episode 2 (2023-05-23)
+- **Complaint & Symptoms**: severe unilateral headache | photophobia, aura, vomiting, severe unilateral headache
+- **Diagnosis**: Migraine
+- **Assessment**: Migraine with and without aura. Preventive therapy initiated.
+- **Treatment & Meds**: Continue current medications. Refer to specialist. Lifestyle counselling. | Sumatriptan 50mg PRN
+
+## ORIGINAL AI-GENERATED CASE SUMMARY
+Unable to generate AI summary. Error: Error calling model 'gemini-2.0-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\nPlease retry in 26.130979041s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '26s'}]}}
+
+## ORIGINAL AI REASONING TRACE
+Agent error: Error calling model 'gemini-2.0-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\nPlease retry in 26.130979041s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '26s'}]}}
+
+## GUIDELINES USED
+None provided
+
+## YOUR CRITIQUE TASK
+Carefully review the AI-generated summary and reasoning against the actual patient data, guidelines, and episodic memory. 
+Specifically check for historical inconsistencies (e.g., repeating failed treatments, suggesting medications the patient has allergies to, or ignoring previous diagnoses).
+
+Respond ONLY in the following JSON format without markdown code blocks:
+{
+  "critique_text": "Overall 3-4 sentence assessment of the quality of the AI reasoning",
+  "evidence_assessment": "Strong / Moderate / Weak — with 1-2 sentence explanation",
+  "missing_info_flags": [
+    "Flag 1: ...",
+    "Flag 2: ..."
+  ],
+  "hallucination_flags": [
+    "Flag 1: Any claim not supported by the data (or 'None identified')",
+    "Flag 2: ..."
+  ],
+  "contradiction_flags": [
+    "Flag 1: Any internal contradictions (or 'None identified')",
+    "Flag 2: ..."
+  ],
+  "guideline_alignment": "Well-aligned / Partially aligned / Not aligned — with explanation",
+  "revised_reasoning": "If improvements are needed, provide a refined 2-3 sentence clinical reasoning. If original is good, state 'Original reasoning is adequate'",
+  "critique_score": 0.75
+}
+[0m
+INFO:     127.0.0.1:51606 - "POST /critique HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'agents.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [94317]
+INFO:     Started server process [95094]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'critique.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [95094]
+INFO:     Started server process [95096]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+[MemoryAgent] Loading FAISS index from disk...
+[MemoryAgent] Loaded 435 visit embeddings.
+
+============================================================
+  Clinical Decision Support System — Starting Up
+============================================================
+[Startup] Initializing database...
+[Startup] Loading patient data from /Users/varshanimbalkar/medAgents/backend/patient_data.json...
+[Startup] Patients loaded: 100 (0 new)
+[Startup] Visits loaded:   435
+[Startup] Episodic FAISS index found on disk — skipping rebuild.
+[Startup] Guideline FAISS index found on disk — skipping rebuild.
+[Startup] ✅ System ready!
+============================================================
+
+INFO:     127.0.0.1:51956 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51962 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51958 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51962 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52263 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52267 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52267 - "GET /history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52263 - "GET /history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52263 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52263 - "GET /dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52267 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52263 - "GET /patients HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52263 - "GET /patient/PAT081 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52267 - "GET /patient/PAT081 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52269 - "GET /patient/PAT081 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52272 - "GET /patient/PAT081 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52272 - "OPTIONS /reason HTTP/1.1" 200 OK
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[MemoryAgent] Loading sentence-transformers model...
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 8776.30it/s]
+[RAG] Loaded guideline index (100 guidelines).
+[RAG] Loading sentence-transformers model...
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 13939.96it/s]
+/Users/varshanimbalkar/medAgents/backend/agents.py:36: LangChainDeprecationWarning: The class `ConversationBufferMemory` was deprecated in LangChain 0.3.1 and will be removed in 2.0.0. Use `langchain.agents.create_agent` instead. For agents that need to remember prior interactions, use `create_agent` with checkpointing or the `Store` API. See https://docs.langchain.com/oss/python/langchain/short-term-memory and https://docs.langchain.com/oss/python/langchain/long-term-memory
+  _patient_memories[patient_id] = ConversationBufferMemory(
+/Users/varshanimbalkar/medAgents/backend/agents.py:188: LangChainDeprecationWarning: The class `LLMChain` was deprecated in LangChain 0.1.17 and will be removed in 2.0.0. Use `RunnableSequence, e.g., `prompt | llm`` instead.
+  chain = LLMChain(
+/Users/varshanimbalkar/medAgents/backend/agents.py:196: LangChainDeprecationWarning: The method `Chain.run` was deprecated in langchain-classic 0.1.0 and will be removed in 2.0.0. Use `invoke` instead.
+  response_text = chain.run(
+LangChain Agent Error: Error calling model 'gemini-1.5-flash' (NOT_FOUND): 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}
+
+
+[1m> Entering new LLMChain chain...[0m
+Prompt after formatting:
+[32;1m[1;3m
+You are a clinical decision support AI assistant. Your role is to help doctors by providing structured clinical summaries and suggestions. You must NEVER make a diagnosis or prescribe treatment. Your output must always be reviewed and approved by a licensed physician.
+
+## PREVIOUS CONVERSATION (Working Memory)
+
+
+## PATIENT INFORMATION
+Name: Aditya Pillai
+Age: 23 years
+Gender: Male
+Allergies: NKDA (No Known Drug Allergy)
+Past Medical History: Stroke, Chronic Kidney Disease, Hypertension
+
+## CURRENT VISIT
+Date: 2023-11-11
+Chief Complaint: persistent low mood
+HPI: Patient presents with persistent low mood for 1 days. Associated symptoms include suicidal ideation, anhedonia. No improvement with previous medications.
+Symptoms: suicidal ideation, fatigue, poor concentration
+Clinical Notes: Patient Aditya Pillai, 23-year-old, presenting for fourth visit. Chief complaint: persistent low mood. Patient reports poor concentration, fatigue, anhedonia. Symptoms have been present for 14 days. On examination, patient is alert and oriented. Vitals as documented. Systemic examination performed. Cardiovascular: S1 S2 heard, no murmurs. Respiratory: Bilateral crackles. Abdomen: Mild epigastric tenderness. Assessment: Moderate depressive episode. CBT referral made. Treatment plan reviewed and adjusted for visit 4. Laboratory investigations ordered. Patient counselled on medications and lifestyle. Follow-up advised in 4 weeks.
+
+## VITALS
+{
+  "blood_pressure": {
+    "systolic": 115,
+    "diastolic": 83
+  },
+  "pulse": 72,
+  "temperature": 98.4,
+  "respiratory_rate": 14,
+  "spo2": 100,
+  "height": 152,
+  "weight": 99,
+  "bmi": 42.8
+}
+
+## LABORATORY RESULTS (Selected)
+CBC: HGB 11.7 g/dL, WBC 6.6 x10³/μL
+KFT: Creatinine 1.1 mg/dL, Urea 29 mg/dL
+LFT: AST 22 U/L, ALT 17 U/L
+
+## EPISODIC MEMORY (Relevant Previous Visits)
+### Episode 1 (2023-08-12)
+- **Complaint & Symptoms**: persistent low mood | persistent low mood, fatigue, anhedonia
+- **Diagnosis**: Depression
+- **Assessment**: Moderate depressive episode. CBT referral made.
+- **Treatment & Meds**: Continue current medications. Increase dose. Lifestyle counselling. | Sertraline 50mg OD, Escitalopram 10mg OD, Mirtazapine 15mg ON
+
+### Episode 2 (2023-05-04)
+- **Complaint & Symptoms**: persistent low mood | poor concentration, fatigue
+- **Diagnosis**: Depression
+- **Assessment**: Moderate depressive episode. CBT referral made.
+- **Treatment & Meds**: Continue current medications. Increase dose. Lifestyle counselling. | Sertraline 50mg OD, Escitalopram 10mg OD, Mirtazapine 15mg ON
+
+### Episode 3 (2023-03-13)
+- **Complaint & Symptoms**: persistent low mood | persistent low mood, anhedonia, fatigue
+- **Diagnosis**: Depression
+- **Assessment**: Moderate depressive episode. CBT referral made.
+- **Treatment & Meds**: Continue current medications. Monitor closely. Lifestyle counselling. | Sertraline 50mg OD, Escitalopram 10mg OD
+
+## RELEVANT CLINICAL GUIDELINES (Evidence-Based)
+[G035] Depression (APA Depression Treatment Guidelines 2023): SSRI or SNRI first-line pharmacotherapy. Adequate trial ≥6-8 weeks at therapeutic dose. Combination with psychotherapy superior to either alone for moderate-severe depression.
+[G036] Anxiety Disorders (APA Anxiety Guidelines 2023): CBT most effective psychological treatment. SSRIs/SNRIs first-line medications. Benzodiazepines only for short-term acute relief. Monitor for dependence.
+[G052] Hypertensive Urgency (ESC Hypertension Guidelines 2023): Hypertensive urgency (BP >180/120 without target organ damage): oral antihypertensives, reduce BP by 25% in first hours. Avoid sudden drops causing ischemia.
+[G042] Vitamin B12 Deficiency (British National Formulary): Causes: pernicious anemia, veganism, malabsorption. Symptoms: fatigue, glossitis, peripheral neuropathy, subacute combined degeneration of cord. Check anti-IF antibodies.
+[G060] Dementia (AAN Dementia Guidelines 2017): Cholinesterase inhibitors (donepezil, rivastigmine) for mild-moderate Alzheimer's. Memantine for moderate-severe. Non-pharmacological approaches for behavioral symptoms.
+
+## YOUR TASK
+Based on all the above information, provide a structured clinical support summary. Do NOT diagnose. Use clinical language appropriate for a physician audience.
+
+Respond ONLY in the following JSON format without markdown code blocks:
+{
+  "case_summary": "A concise 3-5 sentence summary of the clinical presentation and key findings",
+  "considerations": [
+    "Consideration 1: ...",
+    "Consideration 2: ..."
+  ],
+  "missing_information": [
+    "Missing info 1: ..."
+  ],
+  "suggested_investigations": [
+    "Investigation 1: ..."
+  ],
+  "follow_up_recommendations": [
+    "Follow-up 1: ..."
+  ],
+  "reasoning_trace": "Step-by-step clinical reasoning walkthrough (3-6 sentences explaining how you arrived at the considerations)"
+}
+[0m
+INFO:     127.0.0.1:52272 - "POST /reason HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52272 - "OPTIONS /critique HTTP/1.1" 200 OK
+
+
+[1m> Entering new LLMChain chain...[0m
+Prompt after formatting:
+[32;1m[1;3m
+You are a senior clinical AI quality reviewer. Your job is to critically evaluate a clinical decision support summary generated by an AI assistant. You must identify any potential errors, hallucinations, missing information, guideline mismatches, or contradictions.
+
+## PATIENT CLINICAL DATA (Ground Truth)
+Allergies: NKDA (No Known Drug Allergy)
+
+## CURRENT VISIT
+Chief Complaint: persistent low mood
+Symptoms: suicidal ideation, fatigue, poor concentration
+
+## VITALS
+Blood Pressure: {'systolic': 115, 'diastolic': 83}
+SpO2: 100
+Temperature: 98.4
+
+## LABORATORY RESULTS (Selected)
+HbA1c: 5.1%
+Creatinine: 1.1 mg/dL
+eGFR: 65 mL/min
+WBC: 6.6 x10³/μL
+CRP: 1.7 mg/L
+
+## EPISODIC MEMORY (Patient History)
+### Episode 1 (2023-08-12)
+- **Complaint & Symptoms**: persistent low mood | persistent low mood, fatigue, anhedonia
+- **Diagnosis**: Depression
+- **Assessment**: Moderate depressive episode. CBT referral made.
+- **Treatment & Meds**: Continue current medications. Increase dose. Lifestyle counselling. | Sertraline 50mg OD, Escitalopram 10mg OD, Mirtazapine 15mg ON
+
+### Episode 2 (2023-05-04)
+- **Complaint & Symptoms**: persistent low mood | poor concentration, fatigue
+- **Diagnosis**: Depression
+- **Assessment**: Moderate depressive episode. CBT referral made.
+- **Treatment & Meds**: Continue current medications. Increase dose. Lifestyle counselling. | Sertraline 50mg OD, Escitalopram 10mg OD, Mirtazapine 15mg ON
+
+### Episode 3 (2023-03-13)
+- **Complaint & Symptoms**: persistent low mood | persistent low mood, anhedonia, fatigue
+- **Diagnosis**: Depression
+- **Assessment**: Moderate depressive episode. CBT referral made.
+- **Treatment & Meds**: Continue current medications. Monitor closely. Lifestyle counselling. | Sertraline 50mg OD, Escitalopram 10mg OD
+
+## ORIGINAL AI-GENERATED CASE SUMMARY
+Unable to generate AI summary. Error: Error calling model 'gemini-1.5-flash' (NOT_FOUND): 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}
+
+## ORIGINAL AI REASONING TRACE
+Agent error: Error calling model 'gemini-1.5-flash' (NOT_FOUND): 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}
+
+## GUIDELINES USED
+None provided
+
+## YOUR CRITIQUE TASK
+Carefully review the AI-generated summary and reasoning against the actual patient data, guidelines, and episodic memory. 
+Specifically check for historical inconsistencies (e.g., repeating failed treatments, suggesting medications the patient has allergies to, or ignoring previous diagnoses).
+
+Respond ONLY in the following JSON format without markdown code blocks:
+{
+  "critique_text": "Overall 3-4 sentence assessment of the quality of the AI reasoning",
+  "evidence_assessment": "Strong / Moderate / Weak — with 1-2 sentence explanation",
+  "missing_info_flags": [
+    "Flag 1: ...",
+    "Flag 2: ..."
+  ],
+  "hallucination_flags": [
+    "Flag 1: Any claim not supported by the data (or 'None identified')",
+    "Flag 2: ..."
+  ],
+  "contradiction_flags": [
+    "Flag 1: Any internal contradictions (or 'None identified')",
+    "Flag 2: ..."
+  ],
+  "guideline_alignment": "Well-aligned / Partially aligned / Not aligned — with explanation",
+  "revised_reasoning": "If improvements are needed, provide a refined 2-3 sentence clinical reasoning. If original is good, state 'Original reasoning is adequate'",
+  "critique_score": 0.75
+}
+[0m
+INFO:     127.0.0.1:52272 - "POST /critique HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52313 - "GET /patient/PAT081 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52316 - "GET /patient/PAT081 HTTP/1.1" 200 OK
