@@ -8,6 +8,8 @@ Checks the reasoning output for:
   - Contradictions with ground-truth patient data
   - Guideline misalignment
   - Historical inconsistencies (e.g. repeating failed treatments)
+
+Integrated with ObservabilityTrace for step-level logging.
 """
 
 import json
@@ -20,6 +22,7 @@ from google.genai import types
 from dotenv import load_dotenv
 
 from memory_agent import memory_agent
+from trace_logger import ObservabilityTrace
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
@@ -40,11 +43,17 @@ def run_critique_agent(
     reasoning: str,
     case_summary: str,
     guidelines_used: list[str],
+    trace: ObservabilityTrace = None,
 ) -> dict:
     vitals = visit.get("vitals", {})
     labs = visit.get("labs", {})
 
-    # Retrieve top-2 episodic memories for historical consistency check
+    # ── Step 1: Episodic Memory Retrieval (for historical consistency) ────────
+    step_mem = trace.start_step("critique_episodic_retrieval", {
+        "patient_id": patient["patient_id"],
+        "top_k": 2,
+    }) if trace else None
+
     episodes = memory_agent.retrieve_episodes(
         current_visit=visit,
         patient_id=patient["patient_id"],
@@ -52,6 +61,13 @@ def run_critique_agent(
     )
     episodic_summary = memory_agent.summarize_episodes(episodes)
 
+    if step_mem:
+        step_mem.finish(output={
+            "episodes_retrieved": len(episodes),
+            "episode_ids": [e.get("visit_id") for e in episodes],
+        })
+
+    # ── Step 2: Build critique prompt ─────────────────────────────────────────
     patient_info = (
         f"Allergies: {', '.join(patient.get('allergies', ['None']))} | "
         f"PMH: {', '.join(patient.get('past_medical', patient.get('past_medical_history', ['None'])))}"
@@ -98,6 +114,12 @@ Return JSON only:
   "critique_score": 0.75
 }}"""
 
+    # ── Step 3: LLM Self-Critique Call ────────────────────────────────────────
+    step_llm = trace.start_step("self_critique_llm", {
+        "model": _MODEL,
+        "prompt_length_chars": len(prompt),
+    }) if trace else None
+
     try:
         response = _client.models.generate_content(
             model=_MODEL,
@@ -111,8 +133,30 @@ Return JSON only:
                 raw = raw[4:]
             raw = raw.rsplit("```", 1)[0].strip()
         parsed = json.loads(raw)
+
+        if step_llm:
+            # Determine if self-correction occurred
+            revised = parsed.get("revised_reasoning", "")
+            self_corrected = (
+                revised.strip().lower() != "original reasoning is adequate"
+                and len(revised.strip()) > 10
+            )
+            hallucinated = any(
+                flag.lower() not in ("none identified", "none", "")
+                for flag in parsed.get("hallucination_flags", ["None identified"])
+            )
+            step_llm.finish(output={
+                "critique_score": parsed.get("critique_score", 0.5),
+                "evidence_assessment": parsed.get("evidence_assessment", ""),
+                "self_corrected": self_corrected,
+                "hallucination_detected": hallucinated,
+                "guideline_alignment": parsed.get("guideline_alignment", ""),
+            })
+
     except Exception as e:
         logger.error(f"Critique agent error: {e}")
+        if step_llm:
+            step_llm.finish(output={"error": str(e)}, status="error")
         parsed = {
             "critique_text": f"Critique agent encountered an error: {str(e)}",
             "evidence_assessment": "Unable to assess",
@@ -135,4 +179,5 @@ Return JSON only:
         "guideline_alignment": parsed.get("guideline_alignment", ""),
         "revised_reasoning": parsed.get("revised_reasoning", ""),
         "critique_score": float(parsed.get("critique_score", 0.5)),
+        "trace_id": trace.trace_id if trace else None,
     }

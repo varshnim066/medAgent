@@ -3,11 +3,12 @@ agents.py
 ---------
 Clinical Reasoning Agent powered by Google Gemini (direct SDK — fast path).
 
-Optimizations over the original LangChain version:
-  - Direct google.generativeai SDK call (no LangChain overhead)
+Optimizations:
+  - Direct google.genai SDK call (no LangChain overhead)
   - Sentence-transformer encoder pre-warmed at startup
-  - top_k capped at 2 for FAISS retrievals (fewer tokens, faster)
-  - Concise prompt to minimise output tokens and generation time
+  - top_k=2 FAISS retrievals (fewer tokens, faster)
+  - Compact prompt to minimise output tokens and generation time
+  - Integrated ObservabilityTrace for full step-level logging
 """
 
 import json
@@ -24,6 +25,7 @@ from langchain_classic.memory import ConversationBufferMemory
 
 from memory_agent import memory_agent
 from rag import retrieve_guidelines
+from trace_logger import ObservabilityTrace
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
@@ -71,12 +73,19 @@ def run_reasoning_agent(
     patient: dict,
     visit: dict,
     all_patient_visits: list[dict],
+    trace: ObservabilityTrace = None,
 ) -> dict:
     logger.info(
         f"--- Reasoning Agent | Patient: {patient.get('name')} | Visit: {visit.get('visit_id')} ---"
     )
 
-    # 1. Episodic memory (top 2 most relevant past visits)
+    # ── Step 1: Episodic Memory Retrieval ──────────────────────────────
+    step1 = trace.start_step("episodic_memory_retrieval", {
+        "patient_id": patient["patient_id"],
+        "query_visit_id": visit.get("visit_id"),
+        "top_k": 2,
+    }) if trace else None
+
     episodes = memory_agent.retrieve_episodes(
         current_visit=visit,
         patient_id=patient["patient_id"],
@@ -84,7 +93,22 @@ def run_reasoning_agent(
     )
     episodic_summary = memory_agent.summarize_episodes(episodes)
 
-    # 2. Guidelines RAG (top 2)
+    if step1:
+        step1.finish(output={
+            "episodes_retrieved": len(episodes),
+            "episode_ids": [e.get("visit_id") for e in episodes],
+            "hybrid_scores": [
+                round(e.get("_memory_scores", {}).get("hybrid_score", 0), 3)
+                for e in episodes
+            ],
+        })
+
+    # ── Step 2: Guideline RAG Retrieval ───────────────────────────────
+    step2 = trace.start_step("guideline_rag_retrieval", {
+        "query": f"{visit.get('chief_complaint', '')} {', '.join(visit.get('symptoms', []))}",
+        "top_k": 2,
+    }) if trace else None
+
     query = f"{visit.get('chief_complaint', '')} {', '.join(visit.get('symptoms', []))}"
     guidelines = retrieve_guidelines(query=query, top_k=2)
     guideline_texts = [
@@ -92,14 +116,21 @@ def run_reasoning_agent(
         for g in guidelines
     ]
 
-    # 3. Confidence score
+    if step2:
+        step2.finish(output={
+            "guidelines_retrieved": len(guidelines),
+            "guideline_ids": [g.get("id") for g in guidelines],
+            "relevance_scores": [round(g.get("relevance_score", 0), 3) for g in guidelines],
+        })
+
+    # ── Step 3: Confidence Score ───────────────────────────────────────
     confidence_score, confidence_label = _compute_confidence(
         previous_visits=all_patient_visits,
         labs=visit.get("labs", {}),
         guidelines=guidelines,
     )
 
-    # 4. Build prompt — compact but complete
+    # ── Step 4: Build Prompt ───────────────────────────────────────────
     vitals = visit.get("vitals", {})
     labs = visit.get("labs", {})
 
@@ -161,7 +192,12 @@ Return JSON only:
   "reasoning_trace": "1-2 sentence clinical reasoning"
 }}"""
 
-    # 5. Direct Gemini SDK call (fast — no LangChain overhead)
+    # ── Step 5: LLM Clinical Reasoning ────────────────────────────────
+    step3 = trace.start_step("clinical_reasoning_llm", {
+        "model": _MODEL,
+        "prompt_length_chars": len(prompt),
+    }) if trace else None
+
     try:
         response = _client.models.generate_content(
             model=_MODEL,
@@ -175,8 +211,19 @@ Return JSON only:
                 raw = raw[4:]
             raw = raw.rsplit("```", 1)[0].strip()
         parsed = json.loads(raw)
+
+        if step3:
+            step3.finish(output={
+                "case_summary_preview": parsed.get("case_summary", "")[:100],
+                "considerations_count": len(parsed.get("considerations", [])),
+                "confidence_score": confidence_score,
+                "confidence_label": confidence_label,
+            })
+
     except Exception as e:
         logger.error(f"Gemini API error: {e}")
+        if step3:
+            step3.finish(output={"error": str(e)}, status="error")
         parsed = {
             "case_summary": f"Unable to generate AI summary. Error: {str(e)}",
             "considerations": ["Review clinical data manually"],
@@ -199,4 +246,5 @@ Return JSON only:
         "reasoning_trace": parsed.get("reasoning_trace", ""),
         "guidelines_used": guideline_texts,
         "previous_visits_count": len(all_patient_visits),
+        "trace_id": trace.trace_id if trace else None,
     }

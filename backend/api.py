@@ -12,6 +12,8 @@ Endpoints:
   POST /approve               — Doctor approval/rejection
   GET  /history               — All approved recommendations
   GET  /dashboard/stats       — Dashboard statistics
+  GET  /traces                — List all observability traces
+  GET  /traces/{trace_id}     — Get a specific trace detail
 """
 
 from fastapi import APIRouter, HTTPException
@@ -19,6 +21,7 @@ from fastapi import APIRouter, HTTPException
 import database as db
 from agents import run_reasoning_agent, get_patient_memory
 from critique import run_critique_agent
+from trace_logger import create_trace, get_trace, list_traces
 from models import (
     ReasonRequest,
     CritiqueRequest,
@@ -86,34 +89,37 @@ def run_reasoning(req: ReasonRequest):
 
     Flow:
       1. Load patient + visit data
-      2. Retrieve previous visits via FAISS
-      3. Retrieve guidelines via RAG
-      4. Call Gemini for structured reasoning
-      5. Return reasoning with confidence score
+      2. Create observability trace
+      3. Retrieve previous visits via FAISS (traced)
+      4. Retrieve guidelines via RAG (traced)
+      5. Call Gemini for structured reasoning (traced)
+      6. Return reasoning with confidence score + trace_id
     """
-    # Get patient from DB
     patient = db.get_patient_by_id(req.patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail=f"Patient {req.patient_id} not found")
 
-    # Merge with in-memory cache for lifestyle/history fields
     cached = _patients_cache.get(req.patient_id, {})
     patient = {**cached, **patient}
 
-    # Get current visit
     visit = db.get_visit_by_id(req.visit_id)
     if not visit:
         raise HTTPException(status_code=404, detail=f"Visit {req.visit_id} not found")
 
-    # Get all patient visits for context
     all_visits = db.get_visits_by_patient(req.patient_id)
 
-    # Run reasoning agent
+    # Create observability trace for this reasoning cycle
+    trace = create_trace(patient_id=req.patient_id, visit_id=req.visit_id)
+
     result = run_reasoning_agent(
         patient=patient,
         visit=visit,
         all_patient_visits=all_visits,
+        trace=trace,
     )
+
+    trace.finish()
+    trace.save()
 
     return result
 
@@ -122,9 +128,7 @@ def run_reasoning(req: ReasonRequest):
 def run_critique(req: CritiqueRequest):
     """
     Run the Self-Critique Agent on an existing reasoning output.
-
-    Takes the reasoning text and case summary and evaluates them
-    for hallucinations, contradictions, and guideline alignment.
+    Critique step is appended to the existing trace for this visit.
     """
     patient = db.get_patient_by_id(req.patient_id)
     if not patient:
@@ -137,13 +141,20 @@ def run_critique(req: CritiqueRequest):
     if not visit:
         raise HTTPException(status_code=404, detail=f"Visit {req.visit_id} not found")
 
+    # Create a new trace for the critique step
+    trace = create_trace(req.patient_id, req.visit_id)
+
     result = run_critique_agent(
         patient=patient,
         visit=visit,
         reasoning=req.reasoning,
         case_summary=req.case_summary,
-        guidelines_used=[],  # Will be retrieved inside agent if needed
+        guidelines_used=[],
+        trace=trace,
     )
+
+    trace.finish()
+    trace.save()
 
     return result
 
@@ -154,6 +165,7 @@ def approve_recommendation(req: ApproveRequest):
     Doctor approves or rejects a clinical recommendation.
 
     - If approved: saves the full recommendation to the database
+                   AND updates the patient's agent memory
     - If rejected: only logs the decision for audit purposes
     - Either way: logs to approval_history
     """
@@ -171,17 +183,20 @@ def approve_recommendation(req: ApproveRequest):
         notes=req.notes or "",
     )
 
-    # HITL: Inject doctor's feedback into the patient's active conversation memory
-    memory = get_patient_memory(req.patient_id)
-    feedback_msg = f"HUMAN DOCTOR REVIEW: Recommendation was {req.decision}."
-    if req.notes:
-        feedback_msg += f" Doctor's notes: {req.notes}"
-    # We save this as a user message so the AI agent sees it in the next turn
-    memory.save_context({"input": "What is the result of my previous recommendation?"}, {"output": feedback_msg})
-
     rec_id = None
 
     if req.decision == "approved":
+        # HITL: Inject doctor's feedback into memory ONLY on approval
+        # This ensures the agent only learns from validated clinical decisions
+        memory = get_patient_memory(req.patient_id)
+        feedback_msg = "HUMAN DOCTOR REVIEW: Recommendation was APPROVED."
+        if req.notes:
+            feedback_msg += f" Doctor's notes: {req.notes}"
+        memory.save_context(
+            {"input": "What is the result of my previous recommendation?"},
+            {"output": feedback_msg}
+        )
+
         # Save recommendation to database
         rec_id = db.save_recommendation({
             "patient_id": req.patient_id,
@@ -226,7 +241,6 @@ def get_dashboard_stats():
     """Return aggregated statistics for the dashboard."""
     stats = db.get_dashboard_stats()
 
-    # Add age distribution from cached patient data
     age_buckets = {"18-30": 0, "31-45": 0, "46-60": 0, "61-80": 0}
     for patient in _patients_cache.values():
         age = patient.get("age", 0)
@@ -244,3 +258,22 @@ def get_dashboard_stats():
     ]
 
     return stats
+
+
+# ── Observability Trace Endpoints ────────────────────────────────────────────
+
+@router.get("/traces")
+def get_all_traces():
+    """List the 50 most recent observability traces."""
+    return {"traces": list_traces(limit=50)}
+
+
+@router.get("/traces/{trace_id}")
+def get_trace_detail(trace_id: str):
+    """Return full step-level detail for a specific trace."""
+    trace = get_trace(trace_id)
+    if trace is None:
+        raise HTTPException(status_code=404, detail=f"Trace {trace_id} not found")
+    if isinstance(trace, dict):
+        return trace
+    return trace.to_dict()
