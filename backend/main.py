@@ -8,7 +8,8 @@ Startup sequence:
   2. Load patient_data.json into SQLite (if not already loaded)
   3. Build FAISS index for patient memory
   4. Build FAISS index for medical guidelines (RAG)
-  5. Start the API server
+  5. Pre-warm the sentence-transformer encoder
+  6. Start the API server
 
 Run:
     uvicorn main:app --reload --port 8000
@@ -111,6 +112,11 @@ async def startup_event():
         build_guideline_index()
     else:
         print("[Startup] Guideline FAISS index found on disk — skipping rebuild.")
+
+    # 7. Pre-warm the sentence-transformer encoder so the first request is fast
+    print("[Startup] Pre-warming sentence-transformer encoder...")
+    memory_agent._get_encoder()
+    print("[Startup] ✅ Encoder ready!")
 
     print("[Startup] ✅ System ready!")
     print("=" * 60 + "\n")

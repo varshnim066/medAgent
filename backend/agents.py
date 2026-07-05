@@ -1,35 +1,45 @@
 """
 agents.py
 ---------
-Clinical Reasoning Agent powered by Google Gemini and LangChain.
+Clinical Reasoning Agent powered by Google Gemini (direct SDK — fast path).
 
-This agent:
-  1. Takes the current patient visit data
-  2. Retrieves previous visit history via FAISS Episodic Memory
-  3. Retrieves relevant medical guidelines via RAG
-  4. Maintains ConversationBufferMemory for the patient's active session
-  5. Calls Gemini via LangChain to generate structured clinical reasoning
+Optimizations over the original LangChain version:
+  - Direct google.generativeai SDK call (no LangChain overhead)
+  - Sentence-transformer encoder pre-warmed at startup
+  - top_k capped at 2 for FAISS retrievals (fewer tokens, faster)
+  - Concise prompt to minimise output tokens and generation time
 """
 
 import json
 import os
+import logging
 from pathlib import Path
 
+from google import genai
+from google.genai import types
 from dotenv import load_dotenv
+
+# Keep ConversationBufferMemory for HITL doctor-feedback injection
+from langchain_classic.memory import ConversationBufferMemory
 
 from memory_agent import memory_agent
 from rag import retrieve_guidelines
 
-# LangChain Imports
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_classic.memory import ConversationBufferMemory
-from langchain_classic.prompts import PromptTemplate
-from langchain_classic.chains import LLMChain
-
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-# Global dictionary to store ConversationBufferMemory per patient
-_patient_memories = {}
+logger = logging.getLogger(__name__)
+
+# ── Configure Gemini SDK (google.genai — latest, non-deprecated) ─────────────
+_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY", ""))
+_MODEL = "gemini-2.5-flash"
+_CONFIG = types.GenerateContentConfig(
+    temperature=0.1,
+    response_mime_type="application/json",
+)
+
+# ── Per-patient conversation memory (used by HITL approve/reject) ────────────
+_patient_memories: dict[str, ConversationBufferMemory] = {}
+
 
 def get_patient_memory(patient_id: str) -> ConversationBufferMemory:
     if patient_id not in _patient_memories:
@@ -38,180 +48,135 @@ def get_patient_memory(patient_id: str) -> ConversationBufferMemory:
         )
     return _patient_memories[patient_id]
 
-llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash",
-    api_key=os.getenv("GEMINI_API_KEY", ""),
-    temperature=0.2
-)
 
+# ── Confidence scorer ────────────────────────────────────────────────────────
 def _compute_confidence(
     previous_visits: list,
     labs: dict,
     guidelines: list,
 ) -> tuple[float, str]:
     score = 0.0
+    score += min(len(previous_visits) / 5.0, 1.0) * 0.40
 
-    visit_score = min(len(previous_visits) / 5.0, 1.0) * 0.40
-    score += visit_score
+    expected = ["CBC", "LFT", "KFT", "Electrolytes", "Glucose", "Lipid_Profile"]
+    score += (sum(1 for s in expected if s in labs) / len(expected)) * 0.40
+    score += min(len(guidelines) / 5.0, 1.0) * 0.20
 
-    expected_lab_sections = ["CBC", "LFT", "KFT", "Electrolytes", "Glucose", "Lipid_Profile"]
-    available = sum(1 for s in expected_lab_sections if s in labs)
-    lab_score = (available / len(expected_lab_sections)) * 0.40
-    score += lab_score
-
-    guideline_score = min(len(guidelines) / 5.0, 1.0) * 0.20
-    score += guideline_score
-
-    if score >= 0.70:
-        label = "High"
-    elif score >= 0.40:
-        label = "Medium"
-    else:
-        label = "Low"
-
+    label = "High" if score >= 0.70 else ("Medium" if score >= 0.40 else "Low")
     return round(score, 2), label
 
 
-def run_reasoning_agent(patient: dict, visit: dict, all_patient_visits: list[dict]) -> dict:
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.info(f"\n--- Running Coordinator Agent for Patient: {patient.get('name')} | Visit: {visit.get('visit_id')} ---")
+# ── Main reasoning agent ─────────────────────────────────────────────────────
+def run_reasoning_agent(
+    patient: dict,
+    visit: dict,
+    all_patient_visits: list[dict],
+) -> dict:
+    logger.info(
+        f"--- Reasoning Agent | Patient: {patient.get('name')} | Visit: {visit.get('visit_id')} ---"
+    )
 
-    # ── Step 1: Retrieve relevant episodic memories (Phase 6) ──────────
+    # 1. Episodic memory (top 2 most relevant past visits)
     episodes = memory_agent.retrieve_episodes(
         current_visit=visit,
         patient_id=patient["patient_id"],
-        top_k=3,
+        top_k=2,
     )
-    
     episodic_summary = memory_agent.summarize_episodes(episodes)
-    logger.info(f"Generated Episodic Summary:\n{episodic_summary}\n")
 
-    # ── Step 2: Retrieve relevant guidelines (Dual RAG - Phase 5) ──────
+    # 2. Guidelines RAG (top 2)
     query = f"{visit.get('chief_complaint', '')} {', '.join(visit.get('symptoms', []))}"
-    guidelines = retrieve_guidelines(query=query, top_k=5)
+    guidelines = retrieve_guidelines(query=query, top_k=2)
     guideline_texts = [
         f"[{g['id']}] {g['disease']} ({g['source']}): {g['snippet']}"
         for g in guidelines
     ]
 
-    # ── Step 3: Compute confidence score ───────────────────────────────
+    # 3. Confidence score
     confidence_score, confidence_label = _compute_confidence(
         previous_visits=all_patient_visits,
         labs=visit.get("labs", {}),
         guidelines=guidelines,
     )
 
-    # ── Step 4: Construct the LangChain Prompt ─────────────────────────
+    # 4. Build prompt — compact but complete
     vitals = visit.get("vitals", {})
     labs = visit.get("labs", {})
 
-    prompt_template = PromptTemplate(
-        input_variables=["chat_history", "patient_info", "current_visit", "vitals", "labs", "episodic_summary", "guidelines"],
-        template="""
-You are a clinical decision support AI assistant. Your role is to help doctors by providing structured clinical summaries and suggestions. You must NEVER make a diagnosis or prescribe treatment. Your output must always be reviewed and approved by a licensed physician.
-
-## PREVIOUS CONVERSATION (Working Memory)
-{chat_history}
-
-## PATIENT INFORMATION
-{patient_info}
-
-## CURRENT VISIT
-{current_visit}
-
-## VITALS
-{vitals}
-
-## LABORATORY RESULTS (Selected)
-{labs}
-
-## EPISODIC MEMORY (Relevant Previous Visits)
-{episodic_summary}
-
-## RELEVANT CLINICAL GUIDELINES (Evidence-Based)
-{guidelines}
-
-## YOUR TASK
-Based on all the above information, provide a structured clinical support summary. Do NOT diagnose. Use clinical language appropriate for a physician audience.
-
-Respond ONLY in the following JSON format without markdown code blocks:
-{{
-  "case_summary": "A concise 3-5 sentence summary of the clinical presentation and key findings",
-  "considerations": [
-    "Consideration 1: ...",
-    "Consideration 2: ..."
-  ],
-  "missing_information": [
-    "Missing info 1: ..."
-  ],
-  "suggested_investigations": [
-    "Investigation 1: ..."
-  ],
-  "follow_up_recommendations": [
-    "Follow-up 1: ..."
-  ],
-  "reasoning_trace": "Step-by-step clinical reasoning walkthrough (3-6 sentences explaining how you arrived at the considerations)"
-}}
-"""
+    patient_info = (
+        f"Name: {patient.get('name')} | Age: {patient.get('age')} | "
+        f"Gender: {patient.get('gender')} | "
+        f"Allergies: {', '.join(patient.get('allergies', ['None']))} | "
+        f"PMH: {', '.join(patient.get('past_medical', patient.get('past_medical_history', ['None'])))}"
     )
 
-    # Format context blocks
-    patient_info = f"""
-Name: {patient.get('name')}
-Age: {patient.get('age')} years
-Gender: {patient.get('gender')}
-Allergies: {', '.join(patient.get('allergies', ['None']))}
-Past Medical History: {', '.join(patient.get('past_medical', patient.get('past_medical_history', ['None'])))}
-    """.strip()
+    visit_info = (
+        f"Date: {visit.get('date', visit.get('visit_date', 'Unknown'))} | "
+        f"Complaint: {visit.get('chief_complaint', 'Unknown')} | "
+        f"Symptoms: {', '.join(visit.get('symptoms', []))} | "
+        f"HPI: {visit.get('hpi', 'N/A')}"
+    )
 
-    current_visit = f"""
-Date: {visit.get('date', visit.get('visit_date', 'Unknown'))}
-Chief Complaint: {visit.get('chief_complaint', 'Unknown')}
-HPI: {visit.get('hpi', 'Not provided')}
-Symptoms: {', '.join(visit.get('symptoms', []))}
-Clinical Notes: {visit.get('clinical_notes', 'Not provided')}
-    """.strip()
+    vitals_info = (
+        f"BP: {vitals.get('blood_pressure', 'N/A')} | "
+        f"HR: {vitals.get('heart_rate', 'N/A')} | "
+        f"Temp: {vitals.get('temperature', 'N/A')} | "
+        f"SpO2: {vitals.get('spo2', 'N/A')}"
+    )
 
-    labs_info = f"""
-CBC: HGB {labs.get('CBC', {}).get('HGB', 'N/A')} g/dL, WBC {labs.get('CBC', {}).get('WBC', 'N/A')} x10³/μL
-KFT: Creatinine {labs.get('KFT', {}).get('Creatinine', 'N/A')} mg/dL, Urea {labs.get('KFT', {}).get('Urea', 'N/A')} mg/dL
-LFT: AST {labs.get('LFT', {}).get('AST', 'N/A')} U/L, ALT {labs.get('LFT', {}).get('ALT', 'N/A')} U/L
-    """.strip()
+    labs_info = (
+        f"HGB: {labs.get('CBC', {}).get('HGB', 'N/A')} | "
+        f"WBC: {labs.get('CBC', {}).get('WBC', 'N/A')} | "
+        f"Creatinine: {labs.get('KFT', {}).get('Creatinine', 'N/A')} | "
+        f"HbA1c: {labs.get('Glucose', {}).get('HbA1c', 'N/A')} | "
+        f"AST: {labs.get('LFT', {}).get('AST', 'N/A')} | "
+        f"ALT: {labs.get('LFT', {}).get('ALT', 'N/A')}"
+    )
 
-    vitals_info = json.dumps(vitals, indent=2)
-    guidelines_info = chr(10).join(guideline_texts)
+    guidelines_info = "\n".join(guideline_texts) if guideline_texts else "None"
 
-    # ── Step 5: Execute LangChain Agent (Phase 7) ──────────────────────
+    # Include doctor's prior feedback from HITL memory
     memory = get_patient_memory(patient["patient_id"])
-    
-    chain = LLMChain(
-        llm=llm,
-        prompt=prompt_template,
-        memory=memory,
-        verbose=True
-    )
+    chat_history = memory.load_memory_variables({}).get("chat_history", "")
 
+    prompt = f"""You are a clinical decision support AI. Be concise. Do NOT diagnose.
+{f"PRIOR DOCTOR FEEDBACK: {chat_history}" if chat_history else ""}
+
+PATIENT: {patient_info}
+VISIT: {visit_info}
+VITALS: {vitals_info}
+LABS: {labs_info}
+HISTORY:
+{episodic_summary}
+GUIDELINES:
+{guidelines_info}
+
+Return JSON only:
+{{
+  "case_summary": "1-2 sentence clinical summary",
+  "considerations": ["consideration 1", "consideration 2", "consideration 3"],
+  "missing_information": ["missing 1", "missing 2"],
+  "suggested_investigations": ["investigation 1", "investigation 2"],
+  "follow_up_recommendations": ["follow-up 1", "follow-up 2"],
+  "reasoning_trace": "1-2 sentence clinical reasoning"
+}}"""
+
+    # 5. Direct Gemini SDK call (fast — no LangChain overhead)
     try:
-        response_text = chain.run(
-            patient_info=patient_info,
-            current_visit=current_visit,
-            vitals=vitals_info,
-            labs=labs_info,
-            episodic_summary=episodic_summary,
-            guidelines=guidelines_info
+        response = _client.models.generate_content(
+            model=_MODEL,
+            contents=prompt,
+            config=_CONFIG,
         )
-        
-        raw_text = response_text.strip()
-        if "```json" in raw_text:
-            raw_text = raw_text.split("```json")[1].split("```")[0].strip()
-        elif "```" in raw_text:
-            raw_text = raw_text.split("```")[1].split("```")[0].strip()
-
-        parsed = json.loads(raw_text)
-
+        raw = response.text.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+            raw = raw.rsplit("```", 1)[0].strip()
+        parsed = json.loads(raw)
     except Exception as e:
-        logger.error(f"LangChain Agent Error: {e}")
+        logger.error(f"Gemini API error: {e}")
         parsed = {
             "case_summary": f"Unable to generate AI summary. Error: {str(e)}",
             "considerations": ["Review clinical data manually"],
